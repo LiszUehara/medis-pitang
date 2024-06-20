@@ -13,28 +13,38 @@ import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DisciplineContext } from "../../context/discipline";
 import { useContext, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "../../components/Input";
-import { useNavigate } from "react-router-dom";
 import fetcher from "../../services/api";
 import { AppContext } from "../../context/AppContext";
 
 const disciplineSchema = z.object({
-  name: z.string(),
   description: z.string().nullable(),
-  createDate: z.coerce.date(),
 });
 
-export default function Create() {
-  const { formState, handleSubmit, register } = useForm({
+export default function Edit() {
+  const { formState, handleSubmit, register, setValue } = useForm({
     mode: "onBlur",
     resolver: zodResolver(disciplineSchema),
   });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get("id");
   const { loggedUser } = useContext(AppContext);
   const onSubmit = (values) => {
-    fetcher.post('/api/discipline',values);
-    navigate("../");
+    fetcher.put(`/api/discipline/${id}`, values)
   };
+
+  useEffect(() => {
+    fetcher(`/api/discipline/${id}`).then((data) => {
+      setValue("name", data.name);
+      setValue("description", data.description);
+      setValue(
+        "createDate",
+        new Date(data.createDate).toISOString().split("T")[0]
+      );
+    });
+  }, [id]);
   useEffect(() => {
     if (!loggedUser) {
       navigate('../auth/signin')
@@ -53,7 +63,7 @@ export default function Create() {
         my={12}
       >
         <Heading lineHeight={1.1} fontSize={{ base: "2xl", sm: "3xl" }}>
-          Cadastro de Disciplina
+          Edição de Disciplina
         </Heading>
         <Input
           messageError={formState.errors.name?.message}
@@ -62,8 +72,9 @@ export default function Create() {
           id="name"
           errors={formState.errors}
           placeholder="Digite o nome da disciplina"
-          isRequired={true}
+          isRequired={false}
           type="text"
+          disabled={true}
         />
         <FormControl
           id="description"
@@ -91,25 +102,28 @@ export default function Create() {
           errors={formState.errors}
           isRequired={true}
           type="date"
+          disabled={true}
         />
-
         <Stack spacing={6} direction={["column", "row"]}>
-          {/* <Button
+          <Button
             bg={"red.400"}
             color={"white"}
             w="full"
             _hover={{
               bg: "red.500",
+              borderColor: "red.400",
             }}
+            onClick={() => navigate("/")}
           >
             Cancel
-          </Button> */}
+          </Button>
           <Button
             bg={"teal.400"}
             color={"white"}
             w="full"
             _hover={{
               bg: "teal.500",
+              borderColor: "teal.400",
             }}
             onClick={handleSubmit(onSubmit)}
             isLoading={formState.isSubmitting}
