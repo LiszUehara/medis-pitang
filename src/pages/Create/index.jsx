@@ -5,7 +5,6 @@ import {
   FormErrorMessage,
   FormLabel,
   Heading,
-  Input,
   Stack,
   Textarea,
 } from "@chakra-ui/react";
@@ -13,7 +12,11 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DisciplineContext } from "../../context/discipline";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
+import { Input } from "../../components/Input";
+import { useNavigate } from "react-router-dom";
+import fetcher from "../../services/api";
+import { AppContext } from "../../context/AppContext";
 
 const disciplineSchema = z.object({
   name: z.string(),
@@ -26,9 +29,17 @@ export default function Create() {
     mode: "onBlur",
     resolver: zodResolver(disciplineSchema),
   });
-  const { addDisciplines } = useContext(DisciplineContext);
-
-  const onSubmit = (values) => addDisciplines(values);
+  const navigate = useNavigate();
+  const { loggedUser } = useContext(AppContext);
+  const onSubmit = (values) => {
+    fetcher.post('/api/discipline',values);
+    navigate("../");
+  };
+  useEffect(() => {
+    if (!loggedUser) {
+      navigate('../auth/signin')
+    }
+  }, [loggedUser]);
   return (
     <Flex minH={"80vh"} align={"center"} justify={"center"} bg={"gray.800"}>
       <Stack
@@ -44,20 +55,16 @@ export default function Create() {
         <Heading lineHeight={1.1} fontSize={{ base: "2xl", sm: "3xl" }}>
           Cadastro de Disciplina
         </Heading>
-        <FormControl id="name" isRequired isInvalid={!!formState.errors.name}>
-          <FormLabel>Nome</FormLabel>
-          <Input
-            {...register("name")}
-            placeholder="Digite o nome da disciplina"
-            _placeholder={{ color: "gray.500" }}
-            type="text"
-            _focusVisible={{
-              borderColor: "teal.400",
-              boxShadow: "0 0 0 1px var(--chakra-colors-teal-400)",
-            }}
-          />
-          <FormErrorMessage>{formState.errors.name?.message}</FormErrorMessage>
-        </FormControl>
+        <Input
+          messageError={formState.errors.name?.message}
+          register={register("name")}
+          label="Nome"
+          id="name"
+          errors={formState.errors}
+          placeholder="Digite o nome da disciplina"
+          isRequired={true}
+          type="text"
+        />
         <FormControl
           id="description"
           isInvalid={!!formState.errors.description}
@@ -76,26 +83,16 @@ export default function Create() {
             {formState.errors.description?.message}
           </FormErrorMessage>
         </FormControl>
-        <FormControl
+        <Input
+          messageError={formState.errors.createDate?.message}
+          register={register("createDate")}
+          label="Data de Criação"
           id="createDate"
-          isRequired
-          isInvalid={!!formState.errors.createDate}
-        >
-          <FormLabel>Data de Criação</FormLabel>
-          <Input
-            {...register("createDate")}
-            _placeholder={{ color: "gray.500" }}
-            _focusVisible={{
-              borderColor: "teal.400",
-              boxShadow: "0 0 0 1px var(--chakra-colors-teal-400)",
-            }}
-            type="date"
-            colorScheme="darl"
-          />
-          <FormErrorMessage>
-            {formState.errors.createDate?.message}
-          </FormErrorMessage>
-        </FormControl>
+          errors={formState.errors}
+          isRequired={true}
+          type="date"
+        />
+
         <Stack spacing={6} direction={["column", "row"]}>
           {/* <Button
             bg={"red.400"}
